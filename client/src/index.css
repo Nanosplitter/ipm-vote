@@ -1,0 +1,78 @@
+:root {
+  --transition: 0.2;
+  --bg-one: #002F6C;
+  --bg-two: #000000;
+  --stop: 40;
+  --angle: 45;
+  --border-width: 5;
+  --padlock-size: 300;
+  --border-radius: 6;
+}
+
+body {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: sans-serif;
+  background: linear-gradient(calc(var(--angle) * 1deg), var(--bg-one) calc(var(--stop) * 1%), var(--bg-two) calc(var(--stop) * 1%));
+}
+
+form {
+  display: inline-flex;
+  margin:0px;
+  padding:0px;
+  width: 100%;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  width: auto;
+}
+
+h1 {
+  font-size: 5rem;
+  font-weight: 700;
+  color: #e4e4e4;
+  text-align: center;
+  margin-bottom: 5%;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+}
+
+.form__field {
+  border-radius: 10px;
+  width: 100%;
+  background: #000000;
+  color: #ffffff;
+  font: inherit;
+  border: 2px solid #FFF;
+  outline: 0;
+  padding: 22px 18px;
+}
+
+.action-button {
+    display:inline-block;
+    padding:0.35em 1.2em;
+    margin:0 0.3em 0.3em 0;
+    border-radius:10px;
+    box-sizing: border-box;
+    text-decoration:none;
+    font-family:'Roboto',sans-serif;
+    font-weight:300;
+    color:#ffffff;
+    text-align:center;
+    transition: all 0.2s;
+    background-color:#002F6C;
+    border: 2px solid #FFF;
+    height: 100%;
+  }
+  
+  .action-button:hover {
+    color:#fff;
+    background-color:#00a200;
+  }

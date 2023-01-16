@@ -73,6 +73,7 @@ async function submitPoints(points: number) {
     });
 
     document.querySelector<HTMLInputElement>("#points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#points-output")!.value = "0";
     console.log("Transaction successfully committed!");
   } catch (e) {
     console.log("Transaction failed: ", e);
@@ -112,6 +113,6 @@ onSnapshot(ipmRef, (snapshot) => {
   }
 
   document.querySelector<HTMLOutputElement>("#average-points")!.value = (
-    data.totalPoints / data.numInputs
+    Math.round((data.totalPoints / data.numInputs) * 100) / 100
   ).toString();
 });

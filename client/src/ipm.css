@@ -1,0 +1,75 @@
+:root {
+    --transition: 0.2;
+    --bg-one: #002F6C;
+    --bg-two: #000000;
+    --stop: 40;
+    --angle: 45;
+    --border-width: 5;
+    --padlock-size: 300;
+    --border-radius: 6;
+  }
+  body {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: sans-serif;
+    background: linear-gradient(calc(var(--angle) * 1deg), var(--bg-one) calc(var(--stop) * 1%), var(--bg-two) calc(var(--stop) * 1%));
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #e4e4e4;
+    text-align: center;
+    margin-top: 5%;
+  }
+
+  .average-points {
+    font-size: 10rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .center {
+    display: flex;
+    justify-content: center;
+  }
+
+  .points-output {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+  }
+
+  .action-button {
+    display:inline-block;
+    padding:0.35em 1.2em;
+    margin:0 0.3em 0.3em 0;
+    border-radius:10px;
+    box-sizing: border-box;
+    text-decoration:none;
+    font-family:'Roboto',sans-serif;
+    font-weight:300;
+    color:#ffffff;
+    text-align:center;
+    transition: all 0.2s;
+    background-color:#002F6C;
+  }
+  
+  .action-button:hover {
+    color:#fff;
+    background-color:#00a200;
+  }
+
+  .delete:hover {
+    color: #fff;
+    background-color: #ff0000;
+  }
+
+  .points-slider {
+    width: 75%;
+  }
