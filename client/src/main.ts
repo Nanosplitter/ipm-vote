@@ -2,10 +2,6 @@ import { initializeApp } from "firebase/app";
 import {
   getFirestore,
   collection,
-  doc,
-  runTransaction,
-  setDoc,
-  CollectionReference,
   addDoc,
   onSnapshot,
   query,
@@ -35,6 +31,16 @@ if (ipmId === null || ipmId === "") {
   window.location.replace("/index.html");
 }
 
+var fibbonaci = function (n: number): number {
+  if (n === 0) {
+    return 0;
+  }
+  if (n === 1) {
+    return 1;
+  }
+  return fibbonaci(n - 1) + fibbonaci(n - 2);
+};
+
 async function submitPoints(points: number) {
   if (points === 0) {
     return;
@@ -43,7 +49,7 @@ async function submitPoints(points: number) {
   try {
     await addDoc(collection(db, "inputs"), {
       "ipm-id": ipmId,
-      "points": points
+      points: points
     });
 
     document.querySelector<HTMLInputElement>("#points")!.value = "0";
@@ -55,19 +61,21 @@ async function submitPoints(points: number) {
 }
 
 async function clearPoints() {
-  const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
-  await getDocs(q).then((querySnapshot) => {
-    querySnapshot.forEach(async (doc) => {
-      await deleteDoc(doc.ref)
+  if (confirm("Clear all points?")) {
+    const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
+    await getDocs(q).then((querySnapshot) => {
+      querySnapshot.forEach(async (doc) => {
+        await deleteDoc(doc.ref);
+      });
     });
-  });
+  }
 }
 
 document.querySelector("#submit")!.addEventListener("click", () => {
   const points = parseFloat(
     document.querySelector<HTMLInputElement>("#points")!.value
   );
-  submitPoints(points);
+  submitPoints(fibbonaci(points));
 });
 
 document.querySelector("#clear")!.addEventListener("click", () => {
@@ -77,27 +85,64 @@ document.querySelector("#clear")!.addEventListener("click", () => {
 document.querySelector("#points")!.addEventListener("input", (e) => {
   const points = parseFloat((e.target as HTMLInputElement).value);
   document.querySelector<HTMLOutputElement>("#points-output")!.value =
-    points.toString();
+    fibbonaci(points).toString();
 });
 
+var mode = function (arr: number[]): number {
+  var newarr = arr.slice();
+  newarr.sort((a, b) => a - b);
+  var modeMap: { [key: number]: number } = {};
+  var maxEl = newarr[0],
+    maxCount = 1;
+  for (var i = 0; i < newarr.length; i++) {
+    var el = newarr[i];
+    if (modeMap[el] == null) modeMap[el] = 1;
+    else modeMap[el]++;
+    if (modeMap[el] > maxCount) {
+      maxEl = el;
+      maxCount = modeMap[el];
+    } else if (modeMap[el] === maxCount) {
+      maxEl = Math.min(maxEl, el);
+    }
+  }
+  return maxEl;
+};
 
 const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
 onSnapshot(q, (querySnapshot) => {
-  var totalPoints = 0;
+  var allPoints: number[] = [];
   var numInputs = 0;
   querySnapshot.forEach((doc) => {
     var points = doc.data().points;
-    totalPoints += points;
-    numInputs += 1;
+    allPoints.push(points);
+    numInputs++;
   });
 
   if (numInputs === 0) {
-    document.querySelector<HTMLOutputElement>("#average-points")!.value = "0";
+    document.querySelector("#points-list")!.innerHTML =
+      "Inputs will appear here";
+    document.querySelector<HTMLOutputElement>("#num-points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#mode-points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#min-points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#max-points")!.value = "0";
     return;
   }
 
-  document.querySelector<HTMLOutputElement>("#average-points")!.value = (
-    Math.round((totalPoints / numInputs) * 100) / 100
-  ).toString();
+  allPoints.sort((a, b) => a - b);
 
+  var modePoints = mode(allPoints)!;
+  var minPoints = allPoints[0];
+  var maxPoints = allPoints[allPoints.length - 1];
+
+  document.querySelector("#points-list")!.innerHTML = allPoints
+    .toString()
+    .replaceAll(",", ", ");
+  document.querySelector<HTMLOutputElement>("#num-points")!.value =
+    numInputs.toString();
+  document.querySelector<HTMLOutputElement>("#mode-points")!.value =
+    modePoints.toString();
+  document.querySelector<HTMLOutputElement>("#min-points")!.value =
+    minPoints.toString();
+  document.querySelector<HTMLOutputElement>("#max-points")!.value =
+    maxPoints.toString();
 });
