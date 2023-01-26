@@ -6,7 +6,12 @@ import {
   runTransaction,
   setDoc,
   CollectionReference,
-  onSnapshot
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+  deleteDoc
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -23,33 +28,11 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
-const ipmsRef = collection(db, "ipms") as CollectionReference<{
-  numInputs: number;
-  totalPoints: number;
-}>;
-
 const url = new URL(window.location.href);
 const ipmId = url.searchParams.get("ipm-id");
 
 if (ipmId === null || ipmId === "") {
   window.location.replace("/index.html");
-}
-
-const ipmRef = doc(ipmsRef, ipmId!);
-
-try {
-  await runTransaction(db, async (transaction) => {
-    const ipmDocSnapshot = await transaction.get(ipmRef);
-
-    if (!ipmDocSnapshot.exists()) {
-      transaction.set(ipmRef, {
-        numInputs: 0,
-        totalPoints: 0
-      });
-    }
-  });
-} catch (e) {
-  console.log("Transaction failed: ", e);
 }
 
 async function submitPoints(points: number) {
@@ -58,18 +41,9 @@ async function submitPoints(points: number) {
   }
 
   try {
-    await runTransaction(db, async (transaction) => {
-      const ipmDocSnapshot = await transaction.get(ipmRef);
-      if (!ipmDocSnapshot.exists()) {
-        throw "Document does not exist!";
-      }
-
-      const numInputs = ipmDocSnapshot.data().numInputs + 1;
-      const totalPoints = ipmDocSnapshot.data().totalPoints + points;
-      transaction.update(ipmRef, {
-        numInputs: numInputs,
-        totalPoints: totalPoints
-      });
+    await addDoc(collection(db, "inputs"), {
+      "ipm-id": ipmId,
+      "points": points
     });
 
     document.querySelector<HTMLInputElement>("#points")!.value = "0";
@@ -80,10 +54,12 @@ async function submitPoints(points: number) {
   }
 }
 
-function clearPoints() {
-  setDoc(ipmRef, {
-    numInputs: 0,
-    totalPoints: 0
+async function clearPoints() {
+  const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
+  await getDocs(q).then((querySnapshot) => {
+    querySnapshot.forEach(async (doc) => {
+      await deleteDoc(doc.ref)
+    });
   });
 }
 
@@ -104,15 +80,24 @@ document.querySelector("#points")!.addEventListener("input", (e) => {
     points.toString();
 });
 
-onSnapshot(ipmRef, (snapshot) => {
-  const data = snapshot.data()!;
 
-  if (data.numInputs === 0) {
+const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
+onSnapshot(q, (querySnapshot) => {
+  var totalPoints = 0;
+  var numInputs = 0;
+  querySnapshot.forEach((doc) => {
+    var points = doc.data().points;
+    totalPoints += points;
+    numInputs += 1;
+  });
+
+  if (numInputs === 0) {
     document.querySelector<HTMLOutputElement>("#average-points")!.value = "0";
     return;
   }
 
   document.querySelector<HTMLOutputElement>("#average-points")!.value = (
-    Math.round((data.totalPoints / data.numInputs) * 100) / 100
+    Math.round((totalPoints / numInputs) * 100) / 100
   ).toString();
+
 });
