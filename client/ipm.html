@@ -26,17 +26,26 @@
   <body>
     <div class="container">
       <div class="row">
-        <div class="col-md-4"></div>
-        <div class="col-md-4 center">
-          <h1>Team average</h1>
+        <div class="col-3 center stacked">
+          <h1># of inputs</h1>
+          <output class="points center" id="num-points">0</output>
+        </div>
+        <div class="col-3 center stacked">
+          <h1>Mode</h1>
+          <output class="points center" id="mode-points">0</output>
+        </div>
+        <div class="col-3 center stacked">
+          <h1>Min</h1>
+          <output class="points center" id="min-points">0</output>
+        </div>
+        <div class="col-3 center stacked">
+          <h1>Max</h1>
+          <output class="points center" id="max-points">0</output>
         </div>
       </div>
       <div class="row">
-        <div class="col-md-4"></div>
-        <div class="col-md-4 center">
-          <output class="col-md-4 average-points center" id="average-points"
-            >0</output
-          >
+        <div class="col-12 center stacked">
+          <h1 id="points-list" class="points-list"></h1>
         </div>
       </div>
       <div class="row">
@@ -66,8 +75,8 @@
           <input
             type="range"
             min="0"
-            max="10"
-            step="0.5"
+            max="5"
+            step="1"
             value="0"
             id="points"
             class="points-slider"

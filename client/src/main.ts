@@ -2,11 +2,12 @@ import { initializeApp } from "firebase/app";
 import {
   getFirestore,
   collection,
-  doc,
-  runTransaction,
-  setDoc,
-  CollectionReference,
-  onSnapshot
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+  deleteDoc
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -23,11 +24,6 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
-const ipmsRef = collection(db, "ipms") as CollectionReference<{
-  numInputs: number;
-  totalPoints: number;
-}>;
-
 const url = new URL(window.location.href);
 const ipmId = url.searchParams.get("ipm-id");
 
@@ -35,22 +31,15 @@ if (ipmId === null || ipmId === "") {
   window.location.replace("/index.html");
 }
 
-const ipmRef = doc(ipmsRef, ipmId!);
-
-try {
-  await runTransaction(db, async (transaction) => {
-    const ipmDocSnapshot = await transaction.get(ipmRef);
-
-    if (!ipmDocSnapshot.exists()) {
-      transaction.set(ipmRef, {
-        numInputs: 0,
-        totalPoints: 0
-      });
-    }
-  });
-} catch (e) {
-  console.log("Transaction failed: ", e);
-}
+var fibbonaci = function (n: number): number {
+  if (n === 0) {
+    return 0;
+  }
+  if (n === 1) {
+    return 1;
+  }
+  return fibbonaci(n - 1) + fibbonaci(n - 2);
+};
 
 async function submitPoints(points: number) {
   if (points === 0) {
@@ -58,18 +47,9 @@ async function submitPoints(points: number) {
   }
 
   try {
-    await runTransaction(db, async (transaction) => {
-      const ipmDocSnapshot = await transaction.get(ipmRef);
-      if (!ipmDocSnapshot.exists()) {
-        throw "Document does not exist!";
-      }
-
-      const numInputs = ipmDocSnapshot.data().numInputs + 1;
-      const totalPoints = ipmDocSnapshot.data().totalPoints + points;
-      transaction.update(ipmRef, {
-        numInputs: numInputs,
-        totalPoints: totalPoints
-      });
+    await addDoc(collection(db, "inputs"), {
+      "ipm-id": ipmId,
+      points: points
     });
 
     document.querySelector<HTMLInputElement>("#points")!.value = "0";
@@ -80,18 +60,22 @@ async function submitPoints(points: number) {
   }
 }
 
-function clearPoints() {
-  setDoc(ipmRef, {
-    numInputs: 0,
-    totalPoints: 0
-  });
+async function clearPoints() {
+  if (confirm("Clear all points?")) {
+    const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
+    await getDocs(q).then((querySnapshot) => {
+      querySnapshot.forEach(async (doc) => {
+        await deleteDoc(doc.ref);
+      });
+    });
+  }
 }
 
 document.querySelector("#submit")!.addEventListener("click", () => {
   const points = parseFloat(
     document.querySelector<HTMLInputElement>("#points")!.value
   );
-  submitPoints(points);
+  submitPoints(fibbonaci(points));
 });
 
 document.querySelector("#clear")!.addEventListener("click", () => {
@@ -101,18 +85,64 @@ document.querySelector("#clear")!.addEventListener("click", () => {
 document.querySelector("#points")!.addEventListener("input", (e) => {
   const points = parseFloat((e.target as HTMLInputElement).value);
   document.querySelector<HTMLOutputElement>("#points-output")!.value =
-    points.toString();
+    fibbonaci(points).toString();
 });
 
-onSnapshot(ipmRef, (snapshot) => {
-  const data = snapshot.data()!;
+var mode = function (arr: number[]): number {
+  var newarr = arr.slice();
+  newarr.sort((a, b) => a - b);
+  var modeMap: { [key: number]: number } = {};
+  var maxEl = newarr[0],
+    maxCount = 1;
+  for (var i = 0; i < newarr.length; i++) {
+    var el = newarr[i];
+    if (modeMap[el] == null) modeMap[el] = 1;
+    else modeMap[el]++;
+    if (modeMap[el] > maxCount) {
+      maxEl = el;
+      maxCount = modeMap[el];
+    } else if (modeMap[el] === maxCount) {
+      maxEl = Math.min(maxEl, el);
+    }
+  }
+  return maxEl;
+};
 
-  if (data.numInputs === 0) {
-    document.querySelector<HTMLOutputElement>("#average-points")!.value = "0";
+const q = query(collection(db, "inputs"), where("ipm-id", "==", ipmId));
+onSnapshot(q, (querySnapshot) => {
+  var allPoints: number[] = [];
+  var numInputs = 0;
+  querySnapshot.forEach((doc) => {
+    var points = doc.data().points;
+    allPoints.push(points);
+    numInputs++;
+  });
+
+  if (numInputs === 0) {
+    document.querySelector("#points-list")!.innerHTML =
+      "Inputs will appear here";
+    document.querySelector<HTMLOutputElement>("#num-points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#mode-points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#min-points")!.value = "0";
+    document.querySelector<HTMLOutputElement>("#max-points")!.value = "0";
     return;
   }
 
-  document.querySelector<HTMLOutputElement>("#average-points")!.value = (
-    Math.round((data.totalPoints / data.numInputs) * 100) / 100
-  ).toString();
+  allPoints.sort((a, b) => a - b);
+
+  var modePoints = mode(allPoints)!;
+  var minPoints = allPoints[0];
+  var maxPoints = allPoints[allPoints.length - 1];
+
+  document.querySelector("#points-list")!.innerHTML = allPoints
+    .toString()
+    .replaceAll(",", ", ");
+  document.querySelector<HTMLOutputElement>("#num-points")!.value =
+    numInputs.toString();
+  document.querySelector<HTMLOutputElement>("#mode-points")!.value =
+    modePoints.toString();
+  document.querySelector<HTMLOutputElement>("#min-points")!.value =
+    minPoints.toString();
+  document.querySelector<HTMLOutputElement>("#max-points")!.value =
+    maxPoints.toString();
 });
